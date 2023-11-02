@@ -1,68 +1,15 @@
-<!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-
-    <!-- Include Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <!-- Bootstrap CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+            crossorigin="anonymous"></script>
 
     <style>
-        :root {
-            --bg-dark: #242423;
-            --bg-light: #333533;
-            --fg-light: #E8EDDF;
-            --callout: rgb(255, 255, 102);
-            --callout-dark: #101010;
-            --callout: rgb(255, 255, 102);
-        }
-
-        body {
-            background-color: #242423;
-            color: #fff;
-            font-family: "Inter", Arial, Helvetica, sans-serif, "Noto Color Emoji";
-            font-weight: 400;
-        }
-
-        .btn-primary {
-            background-color: var(--callout);
-            border-color: var(--callout);
-        }
-
-        .btn-primary:hover {
-            background-color: #ffd900;
-            border-color: #ffd900;
-        }
-
-        .form-control {
-            background: var(--fg-light);
-            color: var(--bg-dark);
-        }
-
-        .form-control:focus {
-            background: #E8EDDF;
-            color: var(--bg-dark);
-        }
-
-        .navbar {
-            background-color: var(--bg-light);
-        }
-
-        .navbar-dark .navbar-nav .nav-link {
-            color: #fff;
-        }
-
-        .navbar-dark .navbar-nav .nav-link:hover {
-            color: var(--callout);
-        }
-
-        .container {
-            margin-top: 20px;
-        }
-
-        #sidebar {
-            background-color: var(--bg-light);
-        }
-
         #status {
             background-color: yellow;
             color: #000;
@@ -80,49 +27,62 @@
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark">
-    <a class="navbar-brand" href="#">Rocket Rooms</a>
+
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container">
+        <span class="navbar-brand mb-0 h1">Groups</span>
+    </div>
 </nav>
 
 <div class="container">
     <div class="row">
-        <div class="col-3" id="sidebar">
+        <!-- Sidebar-->
+        <div class="col-md-4" id="sidebar">
             <div id="status" class="pending"></div>
-            <div id="room-list">
+            <div id="room-list" style="display: flex; flex-direction: column;">
                 <template id="room">
                     <button class="btn btn-light room"></button>
                 </template>
             </div>
-            <form id="new-room">
-                <input type="text" class="form-control" name="name" id="name" autocomplete="off" placeholder="New room..." maxlength="29">
-                <button type="submit" class="btn btn-primary">+</button>
+
+            <form id="new-room" class="input-group mt-3">
+                <input type="text" class="form-control" name="name" id="name" autocomplete="off"
+                       placeholder="Enter group name" maxlength="29">
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-primary">+</button>
+                </div>
             </form>
         </div>
-        <div class="col-9" id="content">
-            <div id="messages">
-                <template id="message">
-                    <div class="message">
-                        <span class="username"></span>
-                        <span class="text"></span>
-                    </div>
-                </template>
+
+
+        <!--        Side bar end-->
+
+        <!--        content-->
+        <div class="col-md-8" id="content">
+            <div class="card" id="messages">
+                <div class="card-body" style="height: 400px; overflow-y: scroll;">
+                    <template id="message">
+                        <div class="message">
+                            <span class="username"></span>
+                            <span class="text"></span>
+                        </div>
+                    </template>
+                </div>
             </div>
-            <form id="new-message">
-                <input type="text" class="form-control" name="username" id="username" maxlength="19" placeholder="Guest" autocomplete="off">
-                <input type="text" class="form-control" name="message" id="message" autocomplete="off" placeholder="Send a message..." autofocus>
-                <button type="submit" id="send" class="btn btn-primary">Send</button>
-            </form>
+            <div >
+                <form class="input-group mt-3" id="new-message">
+                <input type="text" class="form-control" name="message" placeholder="Enter your message" autofocus`>
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" id="send" type="submit">→</button>
+                </div>
+                </form>
+            </div>
         </div>
+
+        <!--        content end-->
     </div>
 </div>
-
-
-
 </body>
-<!-- Include Bootstrap JS and jQuery -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
 <script>
     let roomListDiv = document.getElementById('room-list');
     let messagesDiv = document.getElementById('messages');
