@@ -12,12 +12,19 @@ use rocket::tokio::sync::broadcast::{channel, Sender, error::RecvError};
 use rocket::tokio::select;
 use rocket::fs::NamedFile;
 use std::path::{Path, PathBuf};
-
+use rocket::Request;
 
 use std::collections::HashMap;
+use std::net::IpAddr;
 use std::sync::{Arc, Mutex};
+use diesel::SqliteConnection;
 use rocket::response::Redirect;
 
+use diesel::prelude::*;
+mod schema;
+use schema::users;
+mod user;
+use user::NewUser;
 use rand::Rng;
 
 #[derive(Clone, Debug, FromForm, Serialize, Deserialize)]
@@ -42,19 +49,7 @@ fn generate_room_id() -> String {
 #[post("/request_chat", data = "<username>")]
 fn request_chat(username: String, state: &State<AppState>) -> Redirect {
     let mut users = state.users.lock().unwrap();
-    
-    if let Some((other_username, other_user)) = users.iter_mut().find(|(_, user)| user.lock().unwrap().room.is_none() && *user.lock().unwrap().username != username) {
-        let room_id = generate_room_id();
-        users.get(&username).unwrap().lock().unwrap().room = Some(room_id.clone());
-        other_user.lock().unwrap().room = Some(room_id.clone());
-
-        Redirect::to(format!("/room/{}", room_id))
-    } else {
-
-        users.insert(username.clone(), Arc::new(Mutex::new(User { username, room: None })));
-
-        Redirect::to("/waiting")
-    }
+    Redirect::to(format!("/room/{}", generate_room_id()))
 }
 
 #[get("/leave_chat", data = "<username>")]
@@ -106,9 +101,60 @@ async fn random() -> Option<NamedFile> {
     NamedFile::open(Path::new("static/").join("random.html")).await.ok()
 }
 
+// /api/set_user and api/get_user for setting and getting user based on ip?
+#[post("/api/set_user", data = "<user_form>")]
+fn set_user(user_form: Form<NewUser>, request: &Request<'_>) -> String {
+    let mut connection = establish_connection();
+    let ip = get_client_ip(request);
+    if let Some(ip) = ip {
+        diesel::insert_into(users::table)
+            .values(&NewUser { ip: ip.to_string(), username: user_form.into_inner().username })
+            .execute(&mut connection)
+            .expect("Error saving new user");
+        return format!("Username set for IP: {}", ip);
+    }
+    "Failed to set username.".to_string()
+}
+
+#[get("/api/get_user")]
+fn get_user(request: &Request<'_>) -> Option<String> {
+    let mut connection = establish_connection();
+    let ip = get_client_ip(request);
+    if let Some(ip) = ip {
+        let user: User = users::table.find(ip.to_string()).first(&mut connection).ok()?;
+        return Some(user.username);
+    }
+    None
+}
+
+fn get_client_ip(request: &Request<'_>) -> Option<IpAddr> {
+    if let Some(real_ip) = request.headers().get_one("X-Real-IP") {
+        if let Ok(ip) = real_ip.parse() {
+            return Some(ip);
+        }
+    }
+    if let Some(forwarded_for) = request.headers().get_one("X-Forwarded-For") {
+        if let Some(ip) = forwarded_for.split(',').next() {
+            if let Ok(ip) = ip.trim().parse() {
+                return Some(ip);
+            }
+        }
+    }
+    request.client_ip()
+}
+
+pub fn establish_connection() -> SqliteConnection {
+    let database_url = "sqlite:users.db";
+    SqliteConnection::establish(&database_url)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+}
+
+
 #[launch]
 fn rocket() -> _ {
+    let user_map: HashMap<String, String> = HashMap::new();
     rocket::build()
+        .manage(Mutex::new(user_map))
         .manage(channel::<Message>(1024).0)
         .mount("/", routes![post, events, random])
         .mount("/", FileServer::from(relative!("static")))

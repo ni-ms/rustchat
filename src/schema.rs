@@ -1,9 +1,24 @@
-// @generated automatically by Diesel CLI.
+#[macro_use]
+extern crate diesel;
+use diesel::prelude::*;
+use diesel::sqlite::SqliteConnection;
 
-diesel::table! {
-    user (ip) {
-        ip -> Nullable<Text>,
+table! {
+    users (ip) {
+        ip -> Text,
         username -> Text,
-        gender -> Text,
     }
+}
+
+#[derive(Insertable)]
+#[table_name="users"]
+struct NewUser {
+    ip: String,
+    username: String,
+}
+
+#[derive(Queryable)]
+struct User {
+    ip: String,
+    username: String,
 }
