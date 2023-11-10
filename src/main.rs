@@ -26,7 +26,11 @@ use schema::users;
 mod user;
 use user::NewUser;
 use rand::Rng;
-
+use rocket::fairing::{Fairing, Info, Kind};
+use rocket::http::Header;
+use rocket::log::private::debug;
+use rocket::serde::json::Json;
+use rocket::{Response};
 #[derive(Clone, Debug, FromForm, Serialize, Deserialize)]
 #[serde(crate = "rocket::serde")]
 struct User {
@@ -149,13 +153,36 @@ pub fn establish_connection() -> SqliteConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
+pub struct Cors;
+
+#[rocket::async_trait]
+impl Fairing for Cors {
+    fn info(&self) -> Info {
+        Info {
+            name: "Cross-Origin-Resource-Sharing Fairing",
+            kind: Kind::Response,
+        }
+    }
+
+    async fn on_response<'r>(&self, _request: &'r Request<'_>, response: &mut Response<'r>) {
+        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
+        response.set_header(Header::new(
+            "Access-Control-Allow-Methods",
+            "POST, PATCH, PUT, DELETE, HEAD, OPTIONS, GET",
+        ));
+        response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
+    }
+}
 
 #[launch]
 fn rocket() -> _ {
     let user_map: HashMap<String, String> = HashMap::new();
+
     rocket::build()
         .manage(Mutex::new(user_map))
         .manage(channel::<Message>(1024).0)
+        .attach(Cors)
         .mount("/", routes![post, events, random])
         .mount("/", FileServer::from(relative!("static")))
 }
